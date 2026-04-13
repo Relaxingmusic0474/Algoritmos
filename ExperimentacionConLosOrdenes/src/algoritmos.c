@@ -35,7 +35,7 @@ void f3(Real n)
     }
 }
 
-// T(n) = n²
+// T(n) = n² ->  (O(n²))
 void f4(Real n)
 {
     Real x = 0;

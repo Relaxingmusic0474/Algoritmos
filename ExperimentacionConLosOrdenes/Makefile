@@ -54,4 +54,12 @@ run-db: build/$(EXECDB)
 	./build/$(EXECDB)
 
 plot:
+	@echo "Asegurando permisos y generando gráfico..."
+	chmod +x ./plots/smooth_csv.sh || true
 	gnuplot ./plots/plot_comparar_Ns.gnuplot
+
+.PHONY: soft-plot
+soft-plot:
+	@echo "Generando versión muy suavizada (comparacion.png)..."
+	chmod +x ./plots/soft_plot.sh || true
+	./plots/soft_plot.sh
