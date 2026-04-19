@@ -9,12 +9,8 @@ set ylabel 'tiempo (s)'
 set grid
 # Forzar ticks cada 0.001, rango desde 0 y redondeo superior de ymax al múltiplo de 0.001
 stats "db/comparar_Ns.csv" using 1 name 'X' nooutput
-stats "db/comparar_Ns.csv" using 5 name 'Y' nooutput
-# Forzar rango X hasta 1e6 y tics cada 2e5
-xmax = 1e6
-set xrange [0:xmax]
-set xtics 0,200000,1000000
-set format x '%.0e'
+stats "db/comparar_Ns.csv" using 6 name 'Y' nooutput
+xmax = X_max
 ymin = Y_min
 
 # Forzar rango Y entre 0.000 y 0.010 con pasos de 0.001 (10 pasos de 0.001)
@@ -51,17 +47,17 @@ set style line 15 lt 1 lw 2.5 lc rgb '#9467bd'
 
 # Ventana de media móvil (menor para no sobre-alisar): ajustar si quieres
 window = 21
-# Generar suavizados para las 4 columnas de tiempos disponibles (cols 2..5)
+# Llamar al script de shell que genera archivos suavizados
 system(sprintf("/bin/bash plots/smooth_csv.sh %d 2 db/comparar_Ns.csv plots/comparatives/f1_smooth.dat", window))
 system(sprintf("/bin/bash plots/smooth_csv.sh %d 3 db/comparar_Ns.csv plots/comparatives/f2_smooth.dat", window))
 system(sprintf("/bin/bash plots/smooth_csv.sh %d 4 db/comparar_Ns.csv plots/comparatives/f3_smooth.dat", window))
 system(sprintf("/bin/bash plots/smooth_csv.sh %d 5 db/comparar_Ns.csv plots/comparatives/f4_smooth.dat", window))
+system(sprintf("/bin/bash plots/smooth_csv.sh %d 6 db/comparar_Ns.csv plots/comparatives/ms_smooth.dat", window))
 
 # Usar configuración fija y gruesa para garantizar visibilidad
-# Ajustar eje Y de 0.0000 a 0.2000 con pasos de 0.0500
-set yrange [0:0.2]
-set ytics 0,0.05,0.2
-set format y '%.4f'
+set yrange [0:0.003]
+set ytics 0,0.0005,0.003
+set format y '%.6f'
 
 # Líneas de tendencia visibles y continuas
 set style line 11 lt 1 lw 3.5 lc rgb '#1f77b4'
@@ -70,17 +66,9 @@ set style line 13 lt 1 lw 3.5 lc rgb '#2ca02c'
 set style line 14 lt 1 lw 3.5 lc rgb '#d62728'
 set style line 15 lt 1 lw 3.5 lc rgb '#9467bd'
 
-set datafile separator ' '
-
-# Plotear los datos suavizados (ya generados por smooth_csv.sh) SIN aplicar csplines
-# Añadir puntos crudos desde el CSV para comparar forma real (reducir puntos con every para no sobrecargar)
 plot \
-	'plots/comparatives/f1_smooth.dat' using 1:2 with lines ls 11 title 'f1 (smooth)', \
-	'plots/comparatives/f2_smooth.dat' using 1:2 with lines ls 12 title 'f2 (smooth)', \
-	'plots/comparatives/f3_smooth.dat' using 1:2 with lines ls 13 title 'f3 (smooth)', \
-	'plots/comparatives/f4_smooth.dat' using 1:2 with lines ls 14 title 'f4 (smooth)', \
-	'plots/comparatives/ms_smooth.dat' using 1:2 with lines ls 15 title 'mergesort (smooth)', \
-	'db/comparar_Ns.csv' every 10 using 1:2 with points pt 7 ps 0.6 lc rgb '#1f77b4' notitle, \
-	'db/comparar_Ns.csv' every 10 using 1:3 with points pt 7 ps 0.6 lc rgb '#ff7f0e' notitle, \
-	'db/comparar_Ns.csv' every 10 using 1:4 with points pt 7 ps 0.6 lc rgb '#2ca02c' notitle, \
-	'db/comparar_Ns.csv' every 10 using 1:5 with points pt 7 ps 0.6 lc rgb '#d62728' notitle
+	'plots/comparatives/f1_smooth.dat' using 1:2 smooth csplines with lines ls 11 title 'f1 (smooth)', \
+	'plots/comparatives/f2_smooth.dat' using 1:2 smooth csplines with lines ls 12 title 'f2 (smooth)', \
+	'plots/comparatives/f3_smooth.dat' using 1:2 smooth csplines with lines ls 13 title 'f3 (smooth)', \
+	'plots/comparatives/f4_smooth.dat' using 1:2 smooth csplines with lines ls 14 title 'f4 (smooth)', \
+	'plots/comparatives/ms_smooth.dat' using 1:2 smooth csplines with lines ls 15 title 'mergesort (smooth)'
