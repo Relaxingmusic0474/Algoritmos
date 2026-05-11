@@ -1,3 +1,6 @@
 [submodule "DAlg-Proyecto1"]
 	path = DAlg-Proyecto1
 	url = https://github.com/CheeseChariot/DAlg-Proyecto1.git
+[submodule "DAlg-Proyecto2"]
+	path = DAlg-Proyecto2
+	url = https://github.com/ayrtonmo/tarea_algoritmos_2.git
