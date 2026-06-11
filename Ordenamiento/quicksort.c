@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#define ELEMENTS 50000
+
 void swap(int *a, int *b) 
 {
     int temp = *a;
@@ -33,9 +35,9 @@ void quicksort(int arr[], int low, int high)
 
 int main() 
 {
-    int arr[] = {7, 2, 1, 6, 8, 5, 3, 4};
-    int n = sizeof(arr) / sizeof(arr[0]); // tamano del arreglo / tamano de un elemento = cantidad de elementos
-    quicksort(arr, 0, n - 1);
-    for (int i = 0; i < n; i++) printf("%d ", arr[i]);
+    int arr[ELEMENTS] = {0};
+    for (int i=0; i<ELEMENTS; i++) arr[i] = i;
+    quicksort(arr, 0, ELEMENTS - 1);
+    for (int i = 0; i < ELEMENTS; i++) printf("%d ", arr[i]);
     return 0;
 }
