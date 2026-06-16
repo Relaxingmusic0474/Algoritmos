@@ -3,40 +3,34 @@
 #include "time.h"
 #include "string.h"
 
-#define TEXT "ALGORITMOS"
-#define PATTERN "GOR"
+#define TEXT "La Motita es la perrita más linda del mundo"
+#define PATTERN "perri"
+#define MAX_LENGTH_PATTERN 100
 #define NOT_VALID_INDEX -1
-#define SEARCHING_NOT_SUCESSFUL_MSG(txt, ptn) (strcat(strcat(strcat("No se pudo encontrar el patrón ", ptn), " dentro del texto "), txt))
 #define NUM_OF_LETTERS 26
 
 #define q 101
 
 typedef unsigned int Natural;
-typedef struct window Window;
-
-struct window
-{
-    char* string;
-    Natural start_idx;
-    Natural end_idx;
-};
 
 Natural code_character(unsigned char ch);
 Natural power(Natural base, Natural exponent);
 Natural hash_of_pattern(const char* pattern, Natural length);
-Natural prev_hash_of_window(Window window, Natural prev_hash);
+Natural hash_of_window(const char* text, Natural start_idx, Natural end_idx, Natural prev_hash);
 int rabin_karp(const char* text, const char* pattern);
+
+Natural dp_powers[MAX_LENGTH_PATTERN+1] = {0};
 
 int main() 
 {
     int idx;
 
     if ((idx = rabin_karp(TEXT, PATTERN)) == NOT_VALID_INDEX) {
-        SEARCHING_NOT_SUCESSFUL_MSG(TEXT, PATTERN);
+        printf("No se pudo encontrar el patrón %s dentro del texto %s.\n", PATTERN, TEXT);
         return 0;
     }
 
-    printf("El patrón %s se pudo encontrar en la posición %d del texto %s.\n", PATTERN, idx, TEXT);
+    printf("El patrón \"%s\" se pudo encontrar en el índice %d (posición %d) del texto \"%s\".\n", PATTERN, idx, idx+1, TEXT);
 
     return 0;
 }
@@ -58,21 +52,32 @@ Natural code_character(unsigned char ch)
 
 Natural power(Natural base, Natural exponent) 
 {
-    if (exponent == 0) {
-        return 1;
+    if (dp_powers[exponent] != 0) {
+        return dp_powers[exponent];
     }
 
-    if (base == 0 || base == 1 || exponent == 1) {
-        return base;
+    if (exponent == 0) {
+        return dp_powers[0] = 1;
+    }
+
+    if (exponent == 1) {
+        return dp_powers[1] = base;
+    }
+
+    if (base == 1) {
+        for (Natural i=0; i<strlen(PATTERN); i++) {
+            dp_powers[i] = 1;
+        }
+        return dp_powers[exponent];
     }
 
     if (exponent & 1) {
-        return base * power(base, exponent - 1);
+        return dp_powers[exponent] = base * power(base, exponent - 1);
     }
 
     Natural half = power(base, exponent >> 1);
 
-    return half*half;
+    return dp_powers[exponent] = half * half;
 }
 
 Natural hash_of_pattern(const char* pattern, Natural length) 
@@ -90,33 +95,29 @@ Natural hash_of_pattern(const char* pattern, Natural length)
     return result;
 }
 
-
-Natural prev_hash_of_window(Window window, Natural prev_hash) 
+Natural hash_of_window(const char* text, Natural start_idx, Natural end_idx, Natural prev_hash) 
 {
     Natural result = prev_hash;
 
-    if (window.start_idx == 0) 
+    if (start_idx == 0) 
     {
         result = 0;
 
-        for (Natural i = window.start_idx; i <= window.end_idx; i++) {
-            result += code_character(window.string[i]) *
-                      power(NUM_OF_LETTERS, window.end_idx - i);
+        for (Natural i = start_idx; i <= end_idx; i++) {
+            result += code_character(text[i]) *
+                      power(NUM_OF_LETTERS, end_idx - i);
         }
     }
     else 
     {
-        Natural old = code_character(window.string[window.start_idx - 1]);
-        Natural new = code_character(window.string[window.end_idx]);
+        Natural old = code_character(text[start_idx - 1]);
+        Natural new = code_character(text[end_idx]);
 
-        result = (result - old * power(NUM_OF_LETTERS, window.end_idx - window.start_idx))
-                 * NUM_OF_LETTERS
-                 + new;
+        result = (result - old * power(NUM_OF_LETTERS, end_idx - start_idx)) * NUM_OF_LETTERS + new;
     }
 
     return result;
 }
-
 
 int rabin_karp(const char* text, const char* pattern) 
 {
@@ -132,34 +133,26 @@ int rabin_karp(const char* text, const char* pattern)
         return NOT_VALID_INDEX;
     }
 
-    Natural pattern_hash = hash_of_pattern(pattern, m);
-
-    const Natural num_of_windows = n-m+1;
-
-    Window windows[num_of_windows];
-
-    for (Natural i=0; i<num_of_windows; i++) 
-    {
-        windows[i].string = (char*) calloc(strlen(text) + 1, sizeof(char));
-        strcpy(windows[i].string, text);
-        windows[i].start_idx = i;
-        windows[i].end_idx = i+m-1;
+    if (m > MAX_LENGTH_PATTERN) {
+        printf("No es posible buscar un patrón tan largo debido a limitaciones del sistema.\n");
+        return NOT_VALID_INDEX;
     }
 
+    Natural pattern_hash = hash_of_pattern(pattern, m);
 
-    Natural i = 0;
-    Natural hash = 0, prev_hash_before_moduling_arithmetic = 0;
+    printf("El hash del patrón es %u\n", pattern_hash);
 
-    printf("num_windows = %u\n", num_of_windows);
+    Natural i = 0, num_of_windows = n-m+1;
+    Natural window_final_hash = 0, last_window_hash = 0;
 
     while (i < num_of_windows) 
     {
-        prev_hash_before_moduling_arithmetic = prev_hash_of_window(windows[i], prev_hash_before_moduling_arithmetic);
-        hash = prev_hash_before_moduling_arithmetic % q;
+        last_window_hash = hash_of_window(text, i, i+m-1, last_window_hash);
+        window_final_hash = last_window_hash % q;
 
-        printf("prev_hash_before_moduling_arithmetic = %u, hash = %u, i=%u\n",prev_hash_before_moduling_arithmetic, hash, i);
+        printf("i = %u, prev_hash_before_moduling_arithmetic = %u, hash = %u\n", i, last_window_hash, window_final_hash);
         
-        if (hash == pattern_hash) 
+        if (window_final_hash == pattern_hash) 
         {
             Natural txt_idx = i;
             Natural pattern_idx = 0;
@@ -171,12 +164,6 @@ int rabin_karp(const char* text, const char* pattern)
                 }
 
                 if (pattern_idx == m-1) {
-
-                    for (Natural x=0; x<num_of_windows; x++) {
-                        free(windows[x].string);
-                        windows[x].string = NULL;
-                    }
-
                     return txt_idx;
                 }
                 
